@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/frankffenn";
+
+service WorkerService  {
+	rpc SealCommit2(SealCommitRequest) returns (SealCommitResponse);
+}
+
+message SealCommitRequest {
+    SectorID Sector  = 1;
+    bytes Commit1Out = 2;
+}
+
+message SealCommitResponse {
+    bytes Proof = 1;
+}
+
+message SectorID {
+	uint64 Miner = 1;
+	uint64 Number = 2;
+}       
