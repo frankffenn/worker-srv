@@ -1,4 +1,4 @@
-package src
+package main
 
 import (
 	"context"
@@ -15,7 +15,7 @@ func NewServer() *Server {
 	return &Server{}
 }
 
-func (s *Server) SealCommit2(ctx context.Context, req *pb.SealCommitRequest, rsp *pb.SealCommitResponse) error {
+func (s *Server) SealCommit2(ctx context.Context, req *pb.SealCommit2Request, rsp *pb.SealCommit2Response) error {
 	phase1Out := storage2.Commit1Out(req.Commit1Out)
 	sector := abi.SectorID{
 		Number: abi.SectorNumber(req.Sector.Number),

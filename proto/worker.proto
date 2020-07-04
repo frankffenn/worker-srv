@@ -1,19 +1,19 @@
 syntax = "proto3";
 
-package pb;
+package proto;
 
-option go_package = "github.com/frankffenn";
+option go_package = "github.com/frankffenn/worker-srv/proto";
 
 service WorkerService  {
-	rpc SealCommit2(SealCommitRequest) returns (SealCommitResponse);
+	rpc SealCommit2(SealCommit2Request) returns (SealCommit2Response);
 }
 
-message SealCommitRequest {
+message SealCommit2Request {
     SectorID Sector  = 1;
     bytes Commit1Out = 2;
 }
 
-message SealCommitResponse {
+message SealCommit2Response {
     bytes Proof = 1;
 }
 

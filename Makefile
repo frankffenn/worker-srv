@@ -9,5 +9,5 @@ proto:
 
 build:
 	rm -f worker-srv
-	go build $(GOFLAGS) -o worker-srv 
+	go build $(GOFLAGS) -o worker-srv src/*.go
 .PHONY: build

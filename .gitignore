@@ -1,1 +1,5 @@
-worker_srv
+.idea
+.vscode
+.DS_Store
+
+worker-srv
