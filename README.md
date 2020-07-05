@@ -24,8 +24,7 @@
 
 安装 micro 插件     
 ```shell
-    go get github.com/micro/protobuf/proto github.com/micro/protobuf/protoc-gen-go
-    ##
+    go get github.com/micro/micro/v2/cmd/protoc-gen-micro@master
 ```
 
 重新编译      

@@ -9,12 +9,6 @@ import (
 	math "math"
 )
 
-import (
-	client "github.com/micro/go-micro/client"
-	server "github.com/micro/go-micro/server"
-	context "golang.org/x/net/context"
-)
-
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
@@ -185,61 +179,4 @@ var fileDescriptor_e4ff6184b07e587a = []byte{
 	0xb4, 0xa2, 0x36, 0xab, 0x79, 0x6e, 0x16, 0x75, 0x8d, 0xc6, 0x64, 0xf2, 0x93, 0x67, 0x1d, 0xaf,
 	0x32, 0xcf, 0x2e, 0x43, 0x3f, 0x2e, 0xbe, 0x02, 0x00, 0x00, 0xff, 0xff, 0x83, 0xbf, 0xd4, 0xff,
 	0x64, 0x01, 0x00, 0x00,
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ client.Option
-var _ server.Option
-
-// Client API for WorkerService service
-
-type WorkerServiceClient interface {
-	SealCommit2(ctx context.Context, in *SealCommit2Request, opts ...client.CallOption) (*SealCommit2Response, error)
-}
-
-type workerServiceClient struct {
-	c           client.Client
-	serviceName string
-}
-
-func NewWorkerServiceClient(serviceName string, c client.Client) WorkerServiceClient {
-	if c == nil {
-		c = client.NewClient()
-	}
-	if len(serviceName) == 0 {
-		serviceName = "proto"
-	}
-	return &workerServiceClient{
-		c:           c,
-		serviceName: serviceName,
-	}
-}
-
-func (c *workerServiceClient) SealCommit2(ctx context.Context, in *SealCommit2Request, opts ...client.CallOption) (*SealCommit2Response, error) {
-	req := c.c.NewRequest(c.serviceName, "WorkerService.SealCommit2", in)
-	out := new(SealCommit2Response)
-	err := c.c.Call(ctx, req, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// Server API for WorkerService service
-
-type WorkerServiceHandler interface {
-	SealCommit2(context.Context, *SealCommit2Request, *SealCommit2Response) error
-}
-
-func RegisterWorkerServiceHandler(s server.Server, hdlr WorkerServiceHandler, opts ...server.HandlerOption) {
-	s.Handle(s.NewHandler(&WorkerService{hdlr}, opts...))
-}
-
-type WorkerService struct {
-	WorkerServiceHandler
-}
-
-func (h *WorkerService) SealCommit2(ctx context.Context, in *SealCommit2Request, out *SealCommit2Response) error {
-	return h.WorkerServiceHandler.SealCommit2(ctx, in, out)
 }

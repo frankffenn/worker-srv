@@ -5,7 +5,7 @@ import (
 	"time"
 
 	pb "github.com/frankffenn/worker-srv/proto"
-	"github.com/micro/go-micro"
+	micro "github.com/micro/go-micro/v2"
 )
 
 func main() {
