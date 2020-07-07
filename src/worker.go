@@ -27,14 +27,17 @@ func NewServer(max uint64) *Server {
 
 func (s *Server) SealCommit2(ctx context.Context, req *pb.SealCommit2Request, rsp *pb.SealCommit2Response) error {
 	log.Println("sealcommit2 start")
-	cur := atomic.LoadUint64(&s.max)
-	if cur <= 0 {
+	old := atomic.LoadUint64(&s.max)
+	if old <= 0 {
 		log.Println("--------- server busy >>>>>")
 		return ErrServerBusy
 	}
 
-	atomic.CompareAndSwapUint64(&s.max, cur, cur-1)
-	defer atomic.CompareAndSwapUint64(&s.max, cur-1, cur)
+	atomic.CompareAndSwapUint64(&s.max, old, old-1)
+	defer func() {
+		old := atomic.LoadUint64(&s.max)
+		atomic.CompareAndSwapUint64(&s.max, old, old+1)
+	}()
 
 	phase1Out := storage2.Commit1Out(req.Commit1Out)
 	sector := abi.SectorID{
@@ -47,7 +50,7 @@ func (s *Server) SealCommit2(ctx context.Context, req *pb.SealCommit2Request, rs
 	}
 
 	rsp.Proof = ret
-	log.Printf("done, but wait a minute ...(idle:%d)", cur)
+	log.Printf("done, but wait a minute ...(idle:%d)", old)
 	<-time.After(1 * time.Minute)
 	return nil
 }
