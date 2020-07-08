@@ -10,10 +10,7 @@ import (
 	"github.com/filecoin-project/specs-actors/actors/abi"
 	storage2 "github.com/filecoin-project/specs-storage/storage"
 	pb "github.com/frankffenn/worker-srv/proto"
-	"golang.org/x/xerrors"
 )
-
-var ErrServerBusy = xerrors.New("server busy")
 
 type Server struct {
 	max uint64
@@ -30,7 +27,8 @@ func (s *Server) SealCommit2(ctx context.Context, req *pb.SealCommit2Request, rs
 	old := atomic.LoadUint64(&s.max)
 	if old <= 0 {
 		log.Println("--------- server busy >>>>>")
-		return ErrServerBusy
+		rsp.Code = pb.StatusCode_SERVER_BUSY
+		return nil
 	}
 
 	atomic.CompareAndSwapUint64(&s.max, old, old-1)
