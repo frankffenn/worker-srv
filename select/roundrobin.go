@@ -2,6 +2,7 @@ package roundrobin
 
 import (
 	"log"
+	"os"
 	"sync"
 
 	"github.com/micro/go-micro/v2/client"
@@ -15,8 +16,6 @@ import (
 )
 
 var DefaultName = "registry.center"
-
-var opt = client.WithAddress(":8000")
 
 type roundrobin struct {
 	sync.Mutex
@@ -98,4 +97,12 @@ func NewClientWrapper() client.Wrapper {
 			registry: registry,
 		}
 	}
+}
+
+var opt = func(opt *client.CallOptions) {
+	addr := os.Getenv("REGIRSTY_ADDR")
+	if addr == "" {
+		addr = ":8000"
+	}
+	opt.Address = []string{addr}
 }
