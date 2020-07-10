@@ -3,14 +3,17 @@ package main
 import (
 	"log"
 	"time"
+	"os"
 
 	pb "github.com/frankffenn/worker-srv/proto"
 	micro "github.com/micro/go-micro/v2"
-	registry "github.com/micro/go-micro/v2/registry/service"
+	"github.com/micro/go-micro/v2/registry"
+	srv "github.com/micro/go-micro/v2/registry/service"
 )
 
 func main() {
-	reg := registry.NewRegistry()
+	addr := os.Getenv("REGISTRY_ADDR")
+	reg := srv.NewRegistry(registry.Addrs(addr))
 	service := micro.NewService(
 		micro.Name("worker.srv"),
 		micro.RegisterInterval(10*time.Second),

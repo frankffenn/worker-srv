@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 
 	ffi "github.com/filecoin-project/filecoin-ffi"
 	"github.com/filecoin-project/specs-actors/actors/abi"
@@ -20,6 +21,7 @@ func NewServer() *Server {
 }
 
 func (s *Server) SealCommit2(ctx context.Context, req *pb.SealCommit2Request, rsp *pb.SealCommit2Response) error {
+	log.Println("----------------->>> start SealCommit2")
 	phase1Out := storage2.Commit1Out(req.Commit1Out)
 	sector := abi.SectorID{
 		Number: abi.SectorNumber(req.Sector.Number),
@@ -31,6 +33,7 @@ func (s *Server) SealCommit2(ctx context.Context, req *pb.SealCommit2Request, rs
 	}
 
 	rsp.Proof = ret
+	log.Println("----------------->>> finish SealCommit2")
 	return nil
 }
 
