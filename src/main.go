@@ -5,35 +5,22 @@ import (
 	"time"
 
 	pb "github.com/frankffenn/worker-srv/proto"
-	"github.com/micro/cli/v2"
 	micro "github.com/micro/go-micro/v2"
+	registry "github.com/micro/go-micro/v2/registry/service"
 )
 
 func main() {
+	reg := registry.NewRegistry()
 	service := micro.NewService(
 		micro.Name("worker.srv"),
 		micro.RegisterInterval(10*time.Second),
 		micro.RegisterTTL(30*time.Second),
-		micro.Flags(
-			&cli.Uint64Flag{
-				Name:  "max",
-				Usage: "the maximum number of concurrent tasks",
-			},
-		),
+		micro.Registry(reg),
 	)
 
-	var max uint64 = 1
+	service.Init()
 
-	service.Init(
-		micro.Action(func(c *cli.Context) error {
-			if c.Uint64("max") > 0 {
-				max = c.Uint64("max")
-			}
-			return nil
-		}),
-	)
-
-	pb.RegisterWorkerServiceHandler(service.Server(), NewServer(max))
+	pb.RegisterWorkerServiceHandler(service.Server(), NewServer())
 
 	// Run the server
 	if err := service.Run(); err != nil {

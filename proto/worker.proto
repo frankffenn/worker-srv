@@ -8,19 +8,13 @@ service WorkerService  {
 	rpc SealCommit2(SealCommit2Request) returns (SealCommit2Response);
 }
 
-enum StatusCode {
-    SUCCESS = 0; 
-    SERVER_BUSY = 1;
-}
-
 message SealCommit2Request {
     SectorID Sector  = 1;
     bytes Commit1Out = 2;
 }
 
 message SealCommit2Response {
-    StatusCode code = 1;
-    bytes Proof = 2;
+    bytes Proof = 1;
 }
 
 message SectorID {

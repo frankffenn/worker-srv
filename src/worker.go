@@ -2,9 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
-	"sync/atomic"
-	"time"
 
 	ffi "github.com/filecoin-project/filecoin-ffi"
 	"github.com/filecoin-project/specs-actors/actors/abi"
@@ -12,31 +9,17 @@ import (
 	pb "github.com/frankffenn/worker-srv/proto"
 )
 
-type Server struct {
-	max uint64
-}
+var (
+	DefaultService = "registry.center"
+)
 
-func NewServer(max uint64) *Server {
-	return &Server{
-		max: max,
-	}
+type Server struct{}
+
+func NewServer() *Server {
+	return &Server{}
 }
 
 func (s *Server) SealCommit2(ctx context.Context, req *pb.SealCommit2Request, rsp *pb.SealCommit2Response) error {
-	log.Println("sealcommit2 start")
-	old := atomic.LoadUint64(&s.max)
-	if old <= 0 {
-		log.Println("--------- server busy >>>>>")
-		rsp.Code = pb.StatusCode_SERVER_BUSY
-		return nil
-	}
-
-	atomic.CompareAndSwapUint64(&s.max, old, old-1)
-	defer func() {
-		old := atomic.LoadUint64(&s.max)
-		atomic.CompareAndSwapUint64(&s.max, old, old+1)
-	}()
-
 	phase1Out := storage2.Commit1Out(req.Commit1Out)
 	sector := abi.SectorID{
 		Number: abi.SectorNumber(req.Sector.Number),
@@ -48,8 +31,6 @@ func (s *Server) SealCommit2(ctx context.Context, req *pb.SealCommit2Request, rs
 	}
 
 	rsp.Proof = ret
-	log.Printf("done, but wait a minute ...(idle:%d)", old)
-	<-time.After(1 * time.Minute)
 	return nil
 }
 
