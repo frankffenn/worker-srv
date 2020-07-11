@@ -15,7 +15,7 @@ import (
 	rpb "github.com/frankffenn/worker-srv/registry/service/proto"
 )
 
-var DefaultName = "registry.center"
+var DefaultService = "registry.center"
 
 type roundrobin struct {
 	sync.Mutex
@@ -31,7 +31,7 @@ func (s *roundrobin) Call(ctx context.Context, req client.Request, rsp interface
 		// create a selector strategy
 		selector.WithStrategy(func(services []*registry.Service) selector.Next {
 			idles := make(map[string]uint64, 0)
-			rsp, err := s.registry.GetServices(ctx, &rpb.GetServicesRequest{}, options())
+			rsp, err := s.registry.GetServices(ctx, &rpb.GetServicesRequest{}, callOpts()...)
 			if err != nil {
 				log.Println("GetService error", err)
 			} else {
@@ -66,7 +66,7 @@ func (s *roundrobin) Call(ctx context.Context, req client.Request, rsp interface
 				s.rr[req.Service()] = rr
 				s.Unlock()
 
-				_, err := s.registry.Mark(ctx, &rpb.MarkRequest{Id: node.Id}, options())
+				_, err := s.registry.Mark(ctx, &rpb.MarkRequest{Id: node.Id}, callOpts()...)
 				if err != nil {
 					log.Println("mark request error", err)
 				}
@@ -80,7 +80,7 @@ func (s *roundrobin) Call(ctx context.Context, req client.Request, rsp interface
 		return err
 	}
 
-	if _, err := s.registry.Reset(ctx, &rpb.ResetRequest{Id: nodeId}, options()); err != nil {
+	if _, err := s.registry.Reset(ctx, &rpb.ResetRequest{Id: nodeId}, callOpts()...); err != nil {
 		log.Println("reset request error", err)
 	}
 
@@ -90,7 +90,7 @@ func (s *roundrobin) Call(ctx context.Context, req client.Request, rsp interface
 // NewClientWrapper is a wrapper which roundrobins requests
 func NewClientWrapper() client.Wrapper {
 	return func(c client.Client) client.Client {
-		registry := rpb.NewRegistryService(DefaultName, grpc.NewClient())
+		registry := rpb.NewRegistryService(DefaultService, grpc.NewClient())
 		return &roundrobin{
 			rr:       make(map[string]int),
 			Client:   c,
@@ -99,10 +99,11 @@ func NewClientWrapper() client.Wrapper {
 	}
 }
 
-func options() client.CallOption {
+func callOpts() []client.CallOption {
+	var opts []client.CallOption
 	addr := os.Getenv("REGISTRY_ADDR")
-	if addr == "" {
-		return client.WithAddress(":8000")
+	if addr != "" {
+		opts = append(opts, client.WithAddress(addr))
 	}
-	return client.WithAddress(addr)
+	return opts
 }

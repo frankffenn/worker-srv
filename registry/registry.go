@@ -10,6 +10,11 @@ import (
 	"github.com/micro/go-micro/v2/registry/memory"
 )
 
+var (
+	interval   = 5 * time.Second
+	defaultTTL = 1 * time.Minute
+)
+
 type Server struct {
 	sync.RWMutex
 
@@ -31,18 +36,22 @@ func NewServer(opts ...registry.Option) *Server {
 }
 
 func (s *Server) check() {
+	t := time.NewTicker(interval)
+	defer t.Stop()
+
 	for {
-		now := time.Now()
-		s.Lock()
-		for k, v := range s.working {
-			start := time.Unix(v, 0)
-			if now.Sub(start) > 30*time.Minute {
-				delete(s.working, k)
-				s.service[k]++
+		select {
+		case <-t.C:
+			s.Lock()
+			for k, v := range s.working {
+				start := time.Unix(v, 0)
+				if time.Since(start) > defaultTTL {
+					delete(s.working, k)
+					s.service[k]++
+				}
 			}
+			s.Unlock()
 		}
-		s.Unlock()
-		time.Sleep(5 * time.Minute)
 	}
 }
 

@@ -10,10 +10,6 @@ import (
 	pb "github.com/frankffenn/worker-srv/proto"
 )
 
-var (
-	DefaultService = "registry.center"
-)
-
 type Server struct{}
 
 func NewServer() *Server {
@@ -21,7 +17,7 @@ func NewServer() *Server {
 }
 
 func (s *Server) SealCommit2(ctx context.Context, req *pb.SealCommit2Request, rsp *pb.SealCommit2Response) error {
-	log.Println("----------------->>> start SealCommit2")
+	log.Println("----------------->>> start SealCommit2", req.Sector.Number)
 	phase1Out := storage2.Commit1Out(req.Commit1Out)
 	sector := abi.SectorID{
 		Number: abi.SectorNumber(req.Sector.Number),
