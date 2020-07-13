@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	interval   = 5 * time.Second
-	defaultTTL = 1 * time.Minute
+	interval   = 5 * time.Minute
+	defaultTTL = 30 * time.Minute
 )
 
 type Server struct {
