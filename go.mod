@@ -21,8 +21,8 @@ require (
 
 replace github.com/coreos/etcd => github.com/ozonru/etcd v3.3.20-grpc1.27-origmodule+incompatible
 
-replace github.com/filecoin-project/filecoin-ffi => ../filecoin-ffi
+// replace github.com/filecoin-project/filecoin-ffi => ../filecoin-ffi
 
-replace github.com/filecoin-project/sector-storage => ../my-sector-storage
+// replace github.com/filecoin-project/sector-storage => ../my-sector-storage
 
 //replace github.com/filecoin-project/specs-storage => ../my-specs-storage
