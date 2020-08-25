@@ -3,7 +3,7 @@ package roundrobin
 import (
 	"log"
 	"os"
-	"sync"
+	"sync/atomic"
 
 	"github.com/micro/go-micro/v2/client"
 	"github.com/micro/go-micro/v2/client/grpc"
@@ -15,73 +15,79 @@ import (
 	rpb "github.com/frankffenn/worker-srv/registry/service/proto"
 )
 
-var DefaultService = "registry.center"
+var defaultService = "go.micro.srv.registry"
 
 type roundrobin struct {
-	sync.Mutex
 	rr map[string]int
 	client.Client
 	registry rpb.RegistryService
-	done     chan struct{}
+
+	busy int32
 }
 
 func (s *roundrobin) Call(ctx context.Context, req client.Request, rsp interface{}, opts ...client.CallOption) error {
-	var nodeId string
+	var node *registry.Node
 	nOpts := append(opts, client.WithSelectOption(
 		// create a selector strategy
 		selector.WithStrategy(func(services []*registry.Service) selector.Next {
-			idles := make(map[string]uint64, 0)
-			rsp, err := s.registry.GetServices(ctx, &rpb.GetServicesRequest{}, callOpts()...)
-			if err != nil {
-				log.Println("GetService error", err)
-			} else {
-				idles = rsp.Services
-			}
+			if atomic.CompareAndSwapInt32(&s.busy, 0, 1) {
+				defer atomic.StoreInt32(&s.busy, 0)
 
-			// flatten
-			var nodes []*registry.Node
-			for _, service := range services {
-				for _, node := range service.Nodes {
-					if val := idles[node.Id]; val <= 0 {
-						continue
-					}
-					nodes = append(nodes, node)
+				idles := make(map[string]uint64, 0)
+				rsp, err := s.registry.GetServices(ctx, &rpb.GetServicesRequest{}, callOpts()...)
+				if err != nil {
+					log.Println("get all services failed", err)
+				} else {
+					idles = rsp.Services
 				}
-				// nodes = append(nodes, service.Nodes...)
+
+				// flatten
+				var nodes []*registry.Node
+				for _, service := range services {
+					for _, node := range service.Nodes {
+						if val := idles[node.Id]; val <= 0 {
+							continue
+						}
+						nodes = append(nodes, node)
+					}
+				}
+
+				if len(nodes) > 0 {
+					rr := s.rr[req.Service()]
+					node = nodes[rr%len(nodes)]
+					rr++
+					s.rr[req.Service()] = rr
+
+					_, err = s.registry.Mark(ctx, &rpb.MarkRequest{Id: node.Id}, callOpts()...)
+					if err != nil {
+						log.Println("mark service failed", err)
+					}
+				}
+
 			}
 
 			// create the next func that always returns our node
 			return func() (*registry.Node, error) {
-				if len(nodes) == 0 {
+				if node == nil {
 					return nil, selector.ErrNoneAvailable
 				}
-				s.Lock()
-				// get counter
-				rr := s.rr[req.Service()]
-				// get node
-				node := nodes[rr%len(nodes)]
-				// increment
-				rr++
-				// save
-				s.rr[req.Service()] = rr
-				s.Unlock()
-
-				_, err := s.registry.Mark(ctx, &rpb.MarkRequest{Id: node.Id}, callOpts()...)
-				if err != nil {
-					log.Println("mark request error", err)
-				}
-
-				nodeId = node.Id
 				return node, nil
 			}
 		}),
 	))
+
+	defer func() {
+		if node == nil {
+			return
+		}
+		log.Println("reset service", node.Id)
+		if _, err := s.registry.Reset(ctx, &rpb.ResetRequest{Id: node.Id}, callOpts()...); err != nil {
+			log.Println("reset request error", err)
+		}
+	}()
+
 	if err := s.Client.Call(ctx, req, rsp, nOpts...); err != nil {
 		return err
-	}
-
-	if _, err := s.registry.Reset(ctx, &rpb.ResetRequest{Id: nodeId}, callOpts()...); err != nil {
-		log.Println("reset request error", err)
 	}
 
 	return nil
@@ -90,7 +96,7 @@ func (s *roundrobin) Call(ctx context.Context, req client.Request, rsp interface
 // NewClientWrapper is a wrapper which roundrobins requests
 func NewClientWrapper() client.Wrapper {
 	return func(c client.Client) client.Client {
-		registry := rpb.NewRegistryService(DefaultService, grpc.NewClient())
+		registry := rpb.NewRegistryService(defaultService, grpc.NewClient())
 		return &roundrobin{
 			rr:       make(map[string]int),
 			Client:   c,
