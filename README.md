@@ -36,3 +36,16 @@
 ```
     make build
 ```
+
+## 启动服务 
+
+启动 registry-srv  
+```
+./registry-srv --server_address=127.0.0.1:8080
+
+```
+
+启动 worker-srv
+```
+REGISTRY_ADDR=127.0.0.1:8080 ./worker-srv
+```

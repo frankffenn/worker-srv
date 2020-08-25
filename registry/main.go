@@ -7,10 +7,13 @@ import (
 	micro "github.com/micro/go-micro/v2"
 )
 
+var (
+	Name = "go.micro.srv.registry"
+)
+
 func main() {
 	service := micro.NewService(
-		micro.Name("registry.center"),
-		micro.Address(":8000"),
+		micro.Name(Name),
 	)
 
 	service.Init()
